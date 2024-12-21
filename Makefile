@@ -1,38 +1,39 @@
-# Compiler
+# Compiler and flags
 CXX = g++
-
-# Compiler flags
 CXXFLAGS = -std=c++17 -Wall -Wextra
 
-# Directories
-SRC_DIR = src
-BIN_DIR = bin
-OBJ_DIR = obj
-INCLUDE_DIR = include
-LIB_DIR = lib
+# Include directories
+INCLUDES = -I./processes -I./EncryptDecrypt -I./file_handling -I./FileCompression -I./MultiThreading
 
 # Source files
 SOURCES = main.cpp \
-           processes/ProcessManagement.cpp \
-           EncryptDecrypt/cryption.cpp
+          processes/ProcessManagement.cpp \
+          EncryptDecrypt/cryption.cpp \
+          file_handling/IO.cpp \
+          file_handling/ReadEnv.cpp \
+          FileCompression/CompresseFile.cpp \
+          MultiThreading/ThreadPool.cpp
 
-# Object files
-OBJECTS = $(SOURCES:.cpp=.o)
+# Output executable name
+EXECUTABLE = ParallelFileEncryptor
 
-# Executable name
-EXECUTABLE = $(BIN_DIR)/ParallelFileEncryptor
+# Libraries
+LIBS = -lz -lssl -lcrypto -lstdc++fs
 
-# Default target
-all: $(EXECUTABLE)
+# Build directory
+BUILD_DIR = build
 
-# Linking
-$(EXECUTABLE): $(OBJECTS)
-	$(CXX) $(CXXFLAGS) -o $@ $^
+# Create build directory if it doesn't exist
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
 
-# Compiling source files
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -I$(INCLUDE_DIR) -c $< -o $@
+# Compile the source files
+$(BUILD_DIR)/$(EXECUTABLE): $(SOURCES) | $(BUILD_DIR)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $(BUILD_DIR)/$(EXECUTABLE) $(SOURCES) $(LIBS)
 
-# Clean up build files
+# Clean up build artifacts
 clean:
-	rm -f $(OBJ_DIR)/*.o $(EXECUTABLE)
+	rm -rf $(BUILD_DIR)
+
+# Phony targets
+.PHONY: clean

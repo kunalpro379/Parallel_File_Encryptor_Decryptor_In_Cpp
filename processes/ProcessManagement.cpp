@@ -2,6 +2,10 @@
 #undef byte
 #include <iostream>
 #include "ProcessManagement.hpp"
+#include <condition_variable>
+#include <mutex>
+
+
 // #include <wait.h>
 // #include<sys/wait.h>
 
@@ -15,6 +19,11 @@
 #include <memory>
 #include "Task.hpp"
 using namespace std;
+// ProcessManagement.cpp
+#include "../MultiThreading/ThreadPool.hpp"
+
+// Add a member variable for the thread pool
+ThreadPool threadPool(std::thread::hardware_concurrency());
 
 ProcessManagement::ProcessManagement()
 {
@@ -154,21 +163,44 @@ void ProcessManagement::executeTasks()
     // }
 
 }
+void ProcessManagement::executeTasksWithThreading() {
+    std::cout << "Starting threaded task execution..." << std::endl;
+    while (sharedMem->size.load() > 0) {
+        WaitForSingleObject(itemsSemaphore, INFINITE);
+        std::unique_lock<std::mutex> lock(QueuLock);
 
-// destructor
-ProcessManagement::~ProcessManagement()
-{
-    /*
-    sem_close(itemsSemaphore);
-    sem_close(emptySemaphore);
-    sem_unlink("/items_semaphore");
-    sem_unlink("/empty_semaphore");
-    shm_unlink(SHM_NAME);
-    close(shmFd);
-    */
+        char taskStr[256];
+        strcpy(taskStr, sharedMem->tasks[sharedMem->front]);
+        sharedMem->front = (sharedMem->front + 1) % 1000;
+        sharedMem->size.fetch_sub(1);
 
-    CloseHandle(itemsSemaphore);
-    CloseHandle(emptySemaph);
-    UnmapViewOfFile(sharedMem);
-    CloseHandle(shmFd);
+        lock.unlock();
+        ReleaseSemaphore(emptySemaph, 1, NULL);
+
+        std::cout << "Submitting task to thread pool: " << taskStr << std::endl;
+        threadPool.enqueue([taskStr] {
+            try {
+                executionCryption(taskStr);
+                std::cout << "Task completed successfully: " << taskStr << std::endl;
+            } catch (const std::exception& e) {
+                std::cout << "Error executing task: " << e.what() << std::endl;
+            }
+        });
+    }
+    std::cout << "Threaded task execution completed." << std::endl;
+}
+ProcessManagement::~ProcessManagement() {
+    // Clean up resources if necessary
+    if (itemsSemaphore) {
+        CloseHandle(itemsSemaphore);
+    }
+    if (emptySemaph) {
+        CloseHandle(emptySemaph);
+    }
+    if (shmFd) {
+        CloseHandle(shmFd);
+    }
+    if (sharedMem) {
+        UnmapViewOfFile(sharedMem);
+    }
 }

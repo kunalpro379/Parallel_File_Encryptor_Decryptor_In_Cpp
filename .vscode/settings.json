@@ -71,7 +71,13 @@
     "xtr1common": "cpp",
     "xutility": "cpp",
     "mutex": "cpp",
-    "semaphore": "cpp"
+    "semaphore": "cpp",
+    "condition_variable": "cpp",
+    "coroutine": "cpp",
+    "resumable": "cpp",
+    "list": "cpp",
+    "unordered_map": "cpp",
+    "xhash": "cpp"
   },
   "C_Cpp_Runner.cCompilerPath": "gcc",
   "C_Cpp_Runner.cppCompilerPath": "g++",

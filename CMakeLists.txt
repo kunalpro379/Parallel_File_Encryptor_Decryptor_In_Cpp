@@ -19,3 +19,5 @@ add_executable(ParallelFileEncryptor
 
 # Optionally, you can add any additional libraries you need
 # target_link_libraries(ParallelFileEncryptor <your-libraries>)
+find_package(OpenSSL REQUIRED)
+target_link_libraries(ParallelFileEncryptor OpenSSL::SSL OpenSSL::Crypto)

@@ -26,6 +26,7 @@ public:
     ~ProcessManagement(); // Free up shared mem;
     bool submitToQueue(unique_ptr<Task> task);
     void executeTasks();
+    void executeTasksWithThreading();
 
 private:
     // queue<unique_ptr<Task>> taskQueue;
@@ -41,10 +42,12 @@ private:
             cout << size << endl;
         }
     };
+
     struct SharedMemory *sharedMem;
     HANDLE shmFd;
     const char *SHM_NAME = "/MyQueue";
 
     mutex QueuLock;
 };
+
 #endif // PROCESS_MANAGEMENT_HPP

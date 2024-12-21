@@ -1,0 +1,102 @@
+
+# Parallel File Encryptor/Decryptor in C++
+
+This project is a C++ application designed to encrypt and decrypt files in parallel using threading and shared memory. It leverages advanced encryption techniques provided by OpenSSL and demonstrates key operating system concepts such as shared memory, task queues, and semaphores.
+
+## Features
+- **Parallel Processing**: Utilizes threading to perform encryption and decryption tasks concurrently.
+- **Advanced Encryption**: Uses OpenSSL for secure AES encryption and decryption.
+- **Shared Memory**: Implements shared memory for inter-process communication.
+- **Task Queue**: Manages tasks using a queue structure.
+- **Semaphores**: Synchronizes access to shared resources.
+
+## Task Queue
+A task queue is a data structure that holds tasks to be executed. In this project, tasks are represented as file encryption or decryption operations. The queue ensures that tasks are processed in the order they are received.
+
+### Circular Buffer
+The task queue is implemented as a circular buffer within the shared memory. This allows for efficient use of memory and prevents overflow by wrapping around when the end of the buffer is reached.
+
+## Semaphores
+Semaphores are synchronization primitives used to control access to shared resources. They help prevent race conditions by ensuring that only a certain number of processes can access a resource at the same time.
+
+### Usage in Project
+Semaphores are used to manage access to the task queue. An `itemsSemaphore` indicates the number of tasks available, while an `emptySemaphore` indicates the number of available slots in the queue.
+
+## How It Works
+### Task Submission
+Tasks are submitted to the queue by reading files and determining whether they need to be encrypted or decrypted.
+
+### Task Execution
+The main process or worker threads retrieve tasks from the queue. Semaphores ensure that tasks are accessed safely.
+
+### Encryption/Decryption
+Each task is processed using OpenSSL for encryption or decryption. The results are written back to the files.
+
+### Synchronization
+Semaphores synchronize access to the shared memory, ensuring that tasks are processed in a controlled manner.
+
+## Prerequisites
+- **OpenSSL**: Ensure OpenSSL is installed and properly linked.
+- **C++17**: The project requires a C++17 compatible compiler.
+
+## Shared Memory
+### Concept
+Shared memory is a method of inter-process communication (IPC) that allows multiple processes to access the same memory space. This is efficient for exchanging data between processes because it avoids the overhead of message passing.
+
+### Implementation
+In your project, shared memory is used to store tasks that need to be processed. The `ProcessManagement` class initializes shared memory using Windows API functions like `CreateFileMapping` and `MapViewOfFile`. This shared memory segment holds a circular queue of tasks, where each task is represented as a string.
+
+```cpp
+shmFd = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(SharedMemory), SHM_NAME);
+sharedMem = static_cast<SharedMemory *>(MapViewOfFile(shmFd, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(SharedMemory)));
+sharedMem->front = 0;
+sharedMem->rear = 0;
+sharedMem->size.store(0);
+Semaphores
+Concept
+Semaphores are synchronization primitives used to control access to a common resource by multiple processes in a concurrent system. They help prevent race conditions by ensuring that only a certain number of processes can access the resource at a time.
+
+Implementation
+The ProcessManagement class uses semaphores to manage access to the shared memory queue. Two semaphores are used: itemsSemaphore and emptySemaphore. itemsSemaphore indicates the number of tasks available for processing, while emptySemaphore indicates the number of empty slots in the queue.
+
+cpp
+CopyInsert
+itemsSemaphore = CreateSemaphore(NULL, 0, 1000, "items_semaphore");
+emptySemaphore = CreateSemaphore(NULL, 1000, 1000, "empty_semaphore");
+Task Queue
+Concept
+A task queue is a data structure that holds tasks to be executed. It allows tasks to be processed in a first-in, first-out (FIFO) order, which is ideal for managing workloads in a predictable manner.
+
+Implementation
+The shared memory segment acts as a circular task queue. Tasks are added to the rear of the queue and removed from the front. The queue's size is managed using atomic operations to ensure thread safety.
+
+cpp
+CopyInsert
+bool ProcessManagement::submitToQueue(std::unique_ptr<Task> task) {
+    WaitForSingleObject(emptySemaphore, INFINITE);
+    std::unique_lock<std::mutex> lock(QueueLock);
+    if (sharedMem->size.load() == 1000) {
+        return false;
+    }
+    strcpy(sharedMem->tasks[sharedMem->rear], task->toString().c_str());
+    sharedMem->rear = (sharedMem->rear + 1) % 1000;
+    sharedMem->size.fetch_add(1);
+    lock.unlock();
+    ReleaseSemaphore(itemsSemaphore, 1, NULL);
+    return true;
+}
+Thread Pool
+Concept
+A thread pool is a collection of pre-instantiated reusable threads. It allows for efficient management of threads by reducing the overhead of creating and destroying threads for each task.
+
+Implementation
+The ProcessManagement class uses a thread pool to execute tasks concurrently. The thread pool is initialized with a number of threads equal to the hardware concurrency level, which is the number of concurrent threads supported by the system's CPU.
+
+cpp
+CopyInsert
+ThreadPool threadPool(std::thread::hardware_concurrency());
+Conclusion
+This README provides an overview of the Parallel File Encryptor/Decryptor project, detailing its features, implementation concepts, and usage. Ensure that you have the necessary prerequisites installed and configured before running the application.
+
+
+g++ -std=c++17 -o ParallelFileEncryptor.exe main.cpp processes/ProcessManagement.cpp EncryptDecrypt/cryption.cpp file_handling/IO.cpp file_handling/ReadEnv.cpp FileCompression/CompresseFile.cpp MultiThreading/ThreadPool.cpp OpenSSL/OpenSSLCryption.cpp -I./processes -I./EncryptDecrypt -I./file_handling -I./FileCompression -I./OpenSSL -I"C:/vcpkg/installed/x64-windows/include" -L"C:/vcpkg/installed/x64-windows/lib" -lssl -lcrypto -lstdc++fs -lz

@@ -32,12 +32,20 @@ int main(int argc, char *argv[])
             cout << "Valid directory path!" << endl;
             // ProcessManagement processManagement;
 
+            size_t totalOriginalSize = 0;
+            size_t totalCompressedSize = 0;
+           // Start measuring time
+            // auto start = std::chrono::high_resolution_clock::now();
+
             // Iterate over all entries in the directory
             for (const auto& entry : fs::recursive_directory_iterator(directory)) {
                 cout << "Found entry: " << entry.path().string() << endl; // Debugging output
                 if (entry.is_regular_file()) {
                     std::string filePath = entry.path().string();
                     cout << "Processing file: " << filePath << endl;
+
+                   // Calculate original file size
+                    totalOriginalSize += fs::file_size(entry);
 
                     IO io(filePath);
                     std::fstream f_stream = std::move(io.getFileStream());
@@ -58,10 +66,37 @@ int main(int argc, char *argv[])
                 }
             }
 
-            // Execute all tasks in the queue
-            cout << "Executing tasks..." << endl;
-            processManagement.executeTasks();
-            cout << "Tasks execution completed." << endl;
+   // Non-threaded execution
+    auto start = std::chrono::high_resolution_clock::now();
+    processManagement.executeTasks(); // Existing method
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = end - start;
+    std::cout << "Non-threaded execution time: " << elapsed.count() << " seconds" << std::endl;
+
+
+      // Threaded execution
+    start = std::chrono::high_resolution_clock::now();
+    processManagement.executeTasksWithThreading(); // New threaded method
+    end = std::chrono::high_resolution_clock::now();
+    elapsed = end - start;
+    std::cout << "Threaded execution time: " << elapsed.count() << " seconds" << std::endl;
+
+            cout<<endl<<endl;
+
+                       // Calculate total compressed size
+            for (const auto& entry : fs::recursive_directory_iterator(directory)) {
+                if (entry.is_regular_file()) {
+                    totalCompressedSize += fs::file_size(entry);
+                }
+            }
+         // Stop measuring time
+            // auto end = std::chrono::high_resolution_clock::now();
+            // std::chrono::duration<double> elapsed = end - start;
+
+            cout << "Total original size: " << totalOriginalSize << " bytes" << endl;
+            cout << "Total compressed size: " << totalCompressedSize << " bytes" << endl;
+            cout << "Compression ratio: " << static_cast<double>(totalCompressedSize) / totalOriginalSize << endl;
+            cout << "Time taken for execution: " << elapsed.count() << " seconds" << endl;
         } else {
             cout << "Invalid directory path!" << endl;
         }

@@ -1,3 +1,4 @@
+#include<iostream>
 #ifndef FILE_COMPRESSION_HPP
 #define FILE_COMPRESSION_HPP
 #include <string>
