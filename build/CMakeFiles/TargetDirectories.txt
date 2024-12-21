@@ -1,0 +1,3 @@
+C:/Users/kunal/OneDrive/CODE FOR LIFE/BuildFromScratch/Parallel_File_Encryptor_Decryptor/build/CMakeFiles/ParallelFileEncryptor.dir
+C:/Users/kunal/OneDrive/CODE FOR LIFE/BuildFromScratch/Parallel_File_Encryptor_Decryptor/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/kunal/OneDrive/CODE FOR LIFE/BuildFromScratch/Parallel_File_Encryptor_Decryptor/build/CMakeFiles/ZERO_CHECK.dir
